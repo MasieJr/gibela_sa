@@ -1,0 +1,41 @@
+workflows:
+  android:
+    name: GibelaSA Android
+
+    environment:
+      flutter: stable
+
+    scripts:
+      - name: Get dependencies
+        script: |
+          cd mobile
+          flutter pub get
+
+      - name: Build Android
+        script: |
+          cd mobile
+          flutter build apk --release
+
+    artifacts:
+      - mobile/build/app/outputs/flutter-apk/*.apk
+
+  ios:
+    name: GibelaSA iOS
+
+    environment:
+      flutter: stable
+      xcode: latest
+
+    scripts:
+      - name: Get dependencies
+        script: |
+          cd mobile
+          flutter pub get
+
+      - name: Build iOS
+        script: |
+          cd mobile
+          flutter build ipa --release
+
+    artifacts:
+      - mobile/build/ios/ipa/*.ipa

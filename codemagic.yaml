@@ -39,27 +39,6 @@ ios:
 
   artifacts:
     - mobile/build/ios/iphoneos/**/*.app
-    
-  ios:
-    name: GibelaSA iOS
-
-    environment:
-      flutter: stable
-      xcode: latest
-
-    scripts:
-      - name: Get dependencies
-        script: |
-          cd mobile
-          flutter pub get
-
-      - name: Build iOS
-        script: |
-          cd mobile
-          flutter build ipa --release
-
-    artifacts:
-      - mobile/build/ios/ipa/*.ipa
   
   
       

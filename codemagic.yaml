@@ -19,6 +19,27 @@ workflows:
     artifacts:
       - mobile/build/app/outputs/flutter-apk/*.apk
 
+ios:
+  name: GibelaSA iOS Simulator
+
+  environment:
+    flutter: stable
+    xcode: latest
+
+  scripts:
+    - name: Get dependencies
+      script: |
+        cd mobile
+        flutter pub get
+
+    - name: Build iOS without signing
+      script: |
+        cd mobile
+        flutter build ios --debug --no-codesign
+
+  artifacts:
+    - mobile/build/ios/iphoneos/**/*.app
+    
   ios:
     name: GibelaSA iOS
 
@@ -39,3 +60,6 @@ workflows:
 
     artifacts:
       - mobile/build/ios/ipa/*.ipa
+  
+  
+      

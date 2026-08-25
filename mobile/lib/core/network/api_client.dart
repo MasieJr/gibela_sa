@@ -13,8 +13,4 @@ class ApiClient {
           receiveTimeout: const Duration(seconds: 5),
         ),
       );
-
-  Future<Response> getRoutes() {
-    return dio.get('/routes');
-  }
 }

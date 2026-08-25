@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 
 import '../../core/config/api_config.dart';
-import '../../features/routes/data/routes_api.dart';
+import '../../features/routes/api/routes_api.dart';
 
 final getIt = GetIt.instance;
 

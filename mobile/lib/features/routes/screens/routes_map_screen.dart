@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
-import '../data/routes_api.dart';
+import '../api/routes_api.dart';
 import '../models/taxi_route.dart';
 
 class RoutesMapScreen extends StatefulWidget {

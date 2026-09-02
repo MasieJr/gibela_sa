@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'features/routes/screens/home_page.dart';
+import 'features/screens/home_page.dart';
 
 class GibelaSAApp extends StatelessWidget {
   const GibelaSAApp({super.key});

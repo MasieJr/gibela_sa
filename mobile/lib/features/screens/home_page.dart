@@ -23,6 +23,7 @@ class HomePage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   GreetingCard(name: "Masie"),
+                  const SizedBox(height: 16),
                   CurrentLocation(),
                   const SizedBox(height: 16),
                   SearchDestinationCard(),

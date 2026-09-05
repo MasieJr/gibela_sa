@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:gibela_sa/features/widgets/base_card.dart';
+import 'package:gibela_sa/features/widgets/global/base_card.dart';
 import 'package:gibela_sa/features/widgets/homepage/search_item.dart';
 
 class PreviousSearchesCard extends StatelessWidget {

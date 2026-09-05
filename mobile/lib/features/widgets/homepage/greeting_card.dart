@@ -35,7 +35,6 @@ class GreetingCard extends StatelessWidget {
           'May your day be as bright as the sun in\nthe morning.',
           style: TextStyle(color: Colors.white70, fontSize: 13.5, height: 1.35),
         ),
-        const SizedBox(height: 24),
       ],
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:gibela_sa/features/widgets/base_card.dart';
+import 'package:gibela_sa/features/widgets/global/base_card.dart';
+import 'package:go_router/go_router.dart';
 
 class SearchDestinationCard extends StatelessWidget {
   const SearchDestinationCard({super.key});
@@ -19,46 +20,60 @@ class SearchDestinationCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(3),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFFECE5),
-                    shape: BoxShape.circle,
+          Material(
+            color: Colors.transparent,
+            child: Ink(
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(14),
+                onTap: () {
+                  context.push('/destination');
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
                   ),
-                  child: Container(
-                    width: 10,
-                    height: 10,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFF95B2C),
-                      shape: BoxShape.circle,
-                    ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFFFECE5),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Container(
+                          width: 10,
+                          height: 10,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFF95B2C),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'Select location',
+                          style: TextStyle(
+                            color: Color(0xFF64748B),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      const Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 16,
+                        color: Color(0xFF64748B),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Text(
-                    'Select location',
-                    style: TextStyle(
-                      color: Color(0xFF64748B),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                const Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 16,
-                  color: Color(0xFF64748B),
-                ),
-              ],
+              ),
             ),
           ),
         ],

@@ -21,8 +21,6 @@ class MapRoutePage extends StatefulWidget {
 }
 
 class _MapRoutePageState extends State<MapRoutePage> {
-  int selectedModeIndex = 2; // Default to public transport
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

@@ -36,11 +36,10 @@ dependencies:
   cupertino_icons: ^1.0.8
   dio: ^5.11.0
   # maplibre_gl: ^0.27.0
-  # maplibre: ^0.3.6
+  maplibre: ^0.3.6
   get_it: ^9.2.1
   go_router: ^18.0.1
-  flutter_launcher_icons: ^0.14.4
-
+  geolocator: ^14.0.3
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -51,7 +50,17 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
 
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/gibela_icon.png"
+
+  adaptive_icon_background: "#F59E0B"
+  adaptive_icon_foreground: "assets/icons/gibela_icon.png"
+
+  remove_alpha_ios: true
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 

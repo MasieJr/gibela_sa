@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gibela_sa/features/widgets/maproute/action_buttons.dart';
 import 'package:gibela_sa/features/widgets/maproute/map_route.dart';
+import 'package:gibela_sa/features/widgets/maproute/map_view.dart';
 import 'package:gibela_sa/features/widgets/maproute/route_header.dart';
 import 'package:gibela_sa/features/widgets/maproute/routes_modal.dart';
 
@@ -26,9 +27,7 @@ class _MapRoutePageState extends State<MapRoutePage> {
     return Scaffold(
       body: Stack(
         children: [
-          // 1. Map Layer (To Replace with MapLibre widget)
-          MapRoute(),
-          // 2. Floating Top Origin/Destination Card
+          MapView(),
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(
@@ -41,10 +40,8 @@ class _MapRoutePageState extends State<MapRoutePage> {
               ),
             ),
           ),
-          ActionButtons(),
-
-          // 4. Draggable Bottom Sheet with Routes
-          RoutesModal(),
+          // ActionButtons(),
+          // RoutesModal(),
         ],
       ),
     );

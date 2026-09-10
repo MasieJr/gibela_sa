@@ -38,7 +38,7 @@ class CurrentLocation extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF00A3FF).withOpacity(0.2),
+                        color: const Color(0xFF00A3FF).withValues(alpha: 0.2),
                         shape: BoxShape.circle,
                       ),
                       child: Container(

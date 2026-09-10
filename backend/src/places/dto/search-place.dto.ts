@@ -4,5 +4,5 @@ export class SearchPlaceDto {
   @IsString()
   @IsNotEmpty()
   @MinLength(2)
-  q: string;
+  q!: string;
 }

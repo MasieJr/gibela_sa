@@ -26,7 +26,7 @@ class HomePage extends StatelessWidget {
                   GreetingCard(name: "Masie"),
                   const SizedBox(height: 16),
                   // CurrentLocation(),
-                  MiniMap(),
+                  // MiniMap(),
                   const SizedBox(height: 16),
                   SearchDestinationCard(),
                   const SizedBox(height: 16),

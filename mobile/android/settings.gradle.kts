@@ -15,6 +15,14 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
     }
+
+    resolutionStrategy {
+        eachPlugin {
+            if (requested.id.id == "org.jlleitschuh.gradle.ktlint") {
+                useVersion("12.1.1") // Forces a stable, compatible ktlint release version
+            }
+        }
+    }
 }
 
 plugins {

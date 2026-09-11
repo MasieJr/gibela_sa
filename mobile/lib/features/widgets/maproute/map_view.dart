@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'package:maplibre/maplibre.dart';
 
 class MapView extends StatefulWidget {
@@ -15,14 +16,20 @@ class _MapViewState extends State<MapView> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: MapLibreMap(
+        options: MapOptions(
+          initZoom: 11,
+          initCenter: Geographic(lon: 28.0473, lat: -26.2041),
+          initStyle: 'https://tiles.openfreemap.org/styles/positron',
+        ),
+        children: [
+          SourceAttribution(showMapLibre: true),
+          MapCompass(),
+          MapControlButtons(),
+        ],
         onMapCreated: (controller) {
-          // Store the map controller for later use. You can use it to control
-          // the map programmatically.
           _mapController = controller;
         },
         onStyleLoaded: (style) {
-          // Add your sources and layers here or do any other setup after the
-          // style has been loaded.
           debugPrint('Map loaded 😎');
         },
       ),

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
-import { Pool } from 'pg';
+import { DatabaseService } from '../database/database.service';
 
 import { WalkingService } from '../walking/walking.service';
 import { PlanJourneyDto } from './dto/plan-journey.dto';
@@ -8,14 +8,14 @@ import { PlanJourneyDto } from './dto/plan-journey.dto';
 @Injectable()
 export class JourneysService {
   constructor(
-    private readonly pool: Pool,
+    private readonly database: DatabaseService,
     private readonly walkingService: WalkingService,
   ) {}
 
   async plan(dto: PlanJourneyDto) {
     const { fromLat, fromLng, toLat, toLng } = dto;
 
-    const result = await this.pool.query(
+    const result = await this.database.query(
       `
       WITH input AS (
         SELECT
@@ -60,7 +60,7 @@ export class JourneysService {
             input.destination_point::geography
           ) AS walking_from_route
 
-        FROM routes r
+        FROM taxi_routes r
         CROSS JOIN input
 
         WHERE

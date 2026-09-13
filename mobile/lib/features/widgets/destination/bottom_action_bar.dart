@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:gibela_sa/core/models/place.dart';
 import 'package:go_router/go_router.dart';
-import 'package:maplibre/maplibre.dart';
 
 class BottomActionBar extends StatelessWidget {
-  final Geographic? origin;
-  final Geographic? destination;
+  final Place? origin;
+  final Place? destination;
 
   const BottomActionBar({
     super.key,
@@ -34,13 +34,6 @@ class BottomActionBar extends StatelessWidget {
         child: ElevatedButton(
           onPressed: canSearch
               ? () {
-                  debugPrint('Origin: ${origin!.lat}, ${origin!.lon}');
-
-                  debugPrint(
-                    'Destination: '
-                    '${destination!.lat}, ${destination!.lon}',
-                  );
-
                   context.push(
                     '/routes',
                     extra: {'origin': origin, 'destination': destination},
@@ -49,7 +42,8 @@ class BottomActionBar extends StatelessWidget {
               : null,
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFFF95B2C),
-            disabledBackgroundColor: const Color(0xFFF95B2C).withOpacity(0.4),
+            disabledBackgroundColor: const Color(0xFFF95B2C)
+                .withValues(alpha: 0.4),
             elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),

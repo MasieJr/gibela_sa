@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:gibela_sa/core/models/place.dart';
 import 'package:gibela_sa/core/theme/app_colors.dart';
 import 'package:gibela_sa/features/widgets/destination/bottom_action_bar.dart';
 import 'package:gibela_sa/features/widgets/destination/input_header.dart';
 import 'package:gibela_sa/features/widgets/destination/popular_destination.dart';
 import 'package:gibela_sa/features/widgets/destination/quick_action_items.dart';
-import 'package:maplibre/maplibre.dart';
 
 class DestinationPage extends StatefulWidget {
   const DestinationPage({super.key});
@@ -17,8 +17,8 @@ class _DestinationPageState extends State<DestinationPage> {
   late final TextEditingController _originController;
   late final TextEditingController _destinationController;
 
-  Geographic? origin;
-  Geographic? destination;
+  Place? origin;
+  Place? destination;
 
   final List<Map<String, String>> _recentPlaces = const [
     {
@@ -43,15 +43,15 @@ class _DestinationPageState extends State<DestinationPage> {
     },
   ];
 
-  void _setOrigin(Geographic location) {
+  void _setOrigin(Place place) {
     setState(() {
-      origin = location;
+      origin = place;
     });
   }
 
-  void _setDestination(Geographic location) {
+  void _setDestination(Place place) {
     setState(() {
-      destination = location;
+      destination = place;
     });
   }
 

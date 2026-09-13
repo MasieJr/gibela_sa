@@ -1,3 +1,4 @@
+import 'package:gibela_sa/core/models/place.dart';
 import 'package:gibela_sa/features/screens/destination_page.dart';
 import 'package:gibela_sa/features/screens/home_page.dart';
 import 'package:gibela_sa/features/screens/map_route_page.dart';
@@ -13,8 +14,14 @@ final GoRouter router = GoRouter(
     ),
     GoRoute(
       path: '/routes',
-      builder: (context, state) =>
-          const MapRoutePage(origin: "Home", destination: "Work"),
+      builder: (context, state) {
+        final data = state.extra as Map<String, Place?>;
+
+        return MapRoutePage(
+          origin: data['origin']!,
+          destination: data['destination']!,
+        );
+      },
     ),
   ],
 );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gibela_sa/core/theme/app_colors.dart';
 import 'package:gibela_sa/features/widgets/maproute/route_card.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class RouteOption {
   final String duration;
@@ -39,7 +40,8 @@ class TransitLeg {
 }
 
 class RoutesModal extends StatelessWidget {
-  RoutesModal({super.key});
+  final bool isLoading;
+  RoutesModal({super.key, required this.isLoading});
 
   final List<RouteOption> routes = [
     RouteOption(
@@ -100,7 +102,7 @@ class RoutesModal extends StatelessWidget {
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
       initialChildSize: 0.42,
-      minChildSize: 0.18,
+      minChildSize: 0.05,
       maxChildSize: 0.90,
       builder: (context, scrollController) {
         return Container(
@@ -169,16 +171,17 @@ class RoutesModal extends StatelessWidget {
               ),
 
               const Divider(color: AppColors.textPrimary, height: 1),
-
-              // Route Results List
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: routes.length,
-                separatorBuilder: (_, _) =>
-                    const Divider(color: AppColors.textPrimary, thickness: 2),
-                itemBuilder: (context, index) =>
-                    RouteCard(route: routes[index]),
+              SliverSkeletonizer(
+                enabled: isLoading,
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: routes.length,
+                  separatorBuilder: (_, _) =>
+                      const Divider(color: AppColors.textPrimary, thickness: 2),
+                  itemBuilder: (context, index) =>
+                      RouteCard(route: routes[index]),
+                ),
               ),
             ],
           ),

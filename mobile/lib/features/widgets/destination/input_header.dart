@@ -1,17 +1,17 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:gibela_sa/core/models/place.dart';
 import 'package:gibela_sa/core/network/api_client.dart';
 import 'package:gibela_sa/core/theme/app_colors.dart';
 import 'package:gibela_sa/features/widgets/destination/location_field.dart';
 import 'package:go_router/go_router.dart';
-import 'package:maplibre/maplibre.dart';
 
 class InputHeader extends StatefulWidget {
   final TextEditingController destinationController;
   final TextEditingController originController;
-  final ValueChanged<Geographic>? onOriginSelected;
-  final ValueChanged<Geographic>? onDestinationSelected;
+  final ValueChanged<Place>? onOriginSelected;
+  final ValueChanged<Place>? onDestinationSelected;
   final VoidCallback? onSwap;
 
   const InputHeader({
@@ -30,6 +30,8 @@ class InputHeader extends StatefulWidget {
 class _InputHeaderState extends State<InputHeader> {
   late final ApiClient _api;
   SearchField? _activeField;
+
+  bool isLoading = true;
 
   Timer? _debounce;
 
@@ -261,17 +263,12 @@ class _InputHeaderState extends State<InputHeader> {
                     color: Colors.transparent,
                     child: InkWell(
                       onTap: () {
-                        final location = Geographic(
-                          lon: place.longitude,
-                          lat: place.latitude,
-                        );
-
                         if (_activeField == SearchField.origin) {
                           widget.originController.text = place.name;
-                          widget.onOriginSelected?.call(location);
+                          widget.onOriginSelected?.call(place);
                         } else if (_activeField == SearchField.destination) {
                           widget.destinationController.text = place.name;
-                          widget.onDestinationSelected?.call(location);
+                          widget.onDestinationSelected?.call(place);
                         }
 
                         setState(() {

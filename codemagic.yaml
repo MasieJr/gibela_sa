@@ -1,9 +1,27 @@
 workflows:
-  gibelasa-ios:
-    name: GibelaSA iOS IPA
+  android:
+    name: GibelaSA Android
 
-    instance_type: mac_mini_m2
-    max_build_duration: 60
+    environment:
+      flutter: stable
+
+    scripts:
+      - name: Get dependencies
+        script: |
+          cd mobile
+          flutter pub get
+
+      - name: Build Android
+        script: |
+          cd mobile
+          flutter build apk --release
+
+    artifacts:
+      - mobile/build/app/outputs/flutter-apk/*.apk
+
+
+  ios:
+    name: GibelaSA iOS IPA
 
     environment:
       flutter: stable
@@ -11,27 +29,34 @@ workflows:
       cocoapods: default
 
     scripts:
-      - name: Get Flutter packages
+      - name: Get dependencies
         script: |
+          cd mobile
           flutter pub get
 
       - name: Install CocoaPods
         script: |
-          cd ios
+          cd mobile/ios
           pod install
-          cd ..
 
-      - name: Build unsigned iOS app
+      - name: Build iOS without signing
         script: |
+          cd mobile
           flutter build ios --release --no-codesign
 
-      - name: Create unsigned IPA for Sideloadly
+      - name: Create IPA for Sideloadly
         script: |
-          mkdir -p Payload
+          cd mobile
+
+          rm -rf Payload
+          mkdir Payload
+
           cp -R build/ios/iphoneos/Runner.app Payload/
+
           zip -r GibelaSA.ipa Payload
+
           rm -rf Payload
 
     artifacts:
-      - GibelaSA.ipa
-      - build/ios/iphoneos/Runner.app
+      - mobile/GibelaSA.ipa
+      - mobile/build/ios/iphoneos/Runner.app

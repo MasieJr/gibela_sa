@@ -1,38 +1,18 @@
 import 'package:flutter/material.dart';
 
-class LocationField extends StatefulWidget {
+class LocationField extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
   final bool isOrigin;
+  final ValueChanged<String> search;
 
   const LocationField({
     super.key,
     required this.controller,
     required this.hint,
-    this.isOrigin = false,
+    required this.isOrigin,
+    required this.search,
   });
-
-  @override
-  State<LocationField> createState() => _LocationFieldState();
-}
-
-class _LocationFieldState extends State<LocationField> {
-  @override
-  void initState() {
-    super.initState();
-    // Rebuild when text changes to show/hide the clear icon dynamically
-    widget.controller.addListener(_onTextChanged);
-  }
-
-  @override
-  void dispose() {
-    widget.controller.removeListener(_onTextChanged);
-    super.dispose();
-  }
-
-  void _onTextChanged() {
-    setState(() {});
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +25,8 @@ class _LocationFieldState extends State<LocationField> {
       ),
       child: Center(
         child: TextField(
-          controller: widget.controller,
+          controller: controller,
+          onChanged: search,
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
@@ -55,17 +36,17 @@ class _LocationFieldState extends State<LocationField> {
             isDense: true,
             contentPadding: EdgeInsets.zero,
             border: InputBorder.none,
-            hintText: widget.hint,
+            hintText: hint,
             hintStyle: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w400,
               color: Color(0xFF94A3B8),
             ),
             suffixIconConstraints: const BoxConstraints(maxHeight: 20),
-            suffixIcon: widget.controller.text.isNotEmpty
+            suffixIcon: controller.text.isNotEmpty
                 ? GestureDetector(
                     onTap: () {
-                      widget.controller.clear();
+                      controller.clear();
                     },
                     child: const Icon(
                       Icons.close,

@@ -1,8 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
-
-import '../../core/config/api_config.dart';
-import '../../features/routes/api/routes_api.dart';
+import 'package:gibela_sa/core/config/api_config.dart';
+import 'package:gibela_sa/core/network/api_client.dart';
 
 final getIt = GetIt.instance;
 
@@ -11,5 +10,5 @@ Future<void> setupDependencies() async {
     () => Dio(BaseOptions(baseUrl: ApiConfig.baseUrl)),
   );
 
-  getIt.registerLazySingleton<RoutesApi>(() => RoutesApi(getIt<Dio>()));
+  getIt.registerLazySingleton<ApiClient>(() => ApiClient());
 }

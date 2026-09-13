@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:gibela_sa/features/widgets/maproute/action_buttons.dart';
-import 'package:gibela_sa/features/widgets/maproute/map_route.dart';
 import 'package:gibela_sa/features/widgets/maproute/map_view.dart';
 import 'package:gibela_sa/features/widgets/maproute/route_header.dart';
-import 'package:gibela_sa/features/widgets/maproute/routes_modal.dart';
-
-// Example route data model
 
 class MapRoutePage extends StatefulWidget {
   final String origin;

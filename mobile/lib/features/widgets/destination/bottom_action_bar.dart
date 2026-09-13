@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:maplibre/maplibre.dart';
 
-class BottomActionBar extends StatefulWidget {
-  const BottomActionBar({super.key});
+class BottomActionBar extends StatelessWidget {
+  final Geographic? origin;
+  final Geographic? destination;
 
-  @override
-  State<BottomActionBar> createState() => _BottomActionBarState();
-}
+  const BottomActionBar({
+    super.key,
+    required this.destination,
+    required this.origin,
+  });
 
-class _BottomActionBarState extends State<BottomActionBar> {
   @override
   Widget build(BuildContext context) {
+    final canSearch = origin != null && destination != null;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       decoration: const BoxDecoration(
@@ -27,12 +32,24 @@ class _BottomActionBarState extends State<BottomActionBar> {
         width: double.infinity,
         height: 52,
         child: ElevatedButton(
-          onPressed: () {
-            //temp routing with static data
-            context.push('/routes');
-          },
+          onPressed: canSearch
+              ? () {
+                  debugPrint('Origin: ${origin!.lat}, ${origin!.lon}');
+
+                  debugPrint(
+                    'Destination: '
+                    '${destination!.lat}, ${destination!.lon}',
+                  );
+
+                  context.push(
+                    '/routes',
+                    extra: {'origin': origin, 'destination': destination},
+                  );
+                }
+              : null,
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFFF95B2C),
+            disabledBackgroundColor: const Color(0xFFF95B2C).withOpacity(0.4),
             elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),

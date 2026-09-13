@@ -4,6 +4,7 @@ import 'package:gibela_sa/features/widgets/destination/bottom_action_bar.dart';
 import 'package:gibela_sa/features/widgets/destination/input_header.dart';
 import 'package:gibela_sa/features/widgets/destination/popular_destination.dart';
 import 'package:gibela_sa/features/widgets/destination/quick_action_items.dart';
+import 'package:maplibre/maplibre.dart';
 
 class DestinationPage extends StatefulWidget {
   const DestinationPage({super.key});
@@ -15,6 +16,9 @@ class DestinationPage extends StatefulWidget {
 class _DestinationPageState extends State<DestinationPage> {
   late final TextEditingController _originController;
   late final TextEditingController _destinationController;
+
+  Geographic? origin;
+  Geographic? destination;
 
   final List<Map<String, String>> _recentPlaces = const [
     {
@@ -38,6 +42,30 @@ class _DestinationPageState extends State<DestinationPage> {
       'distance': '21.0 km',
     },
   ];
+
+  void _setOrigin(Geographic location) {
+    setState(() {
+      origin = location;
+    });
+  }
+
+  void _setDestination(Geographic location) {
+    setState(() {
+      destination = location;
+    });
+  }
+
+  void _swapLocations() {
+    setState(() {
+      final tempText = _originController.text;
+      _originController.text = _destinationController.text;
+      _destinationController.text = tempText;
+
+      final tempLocation = origin;
+      origin = destination;
+      destination = tempLocation;
+    });
+  }
 
   @override
   void initState() {
@@ -63,7 +91,11 @@ class _DestinationPageState extends State<DestinationPage> {
             InputHeader(
               originController: _originController,
               destinationController: _destinationController,
+              onOriginSelected: _setOrigin,
+              onDestinationSelected: _setDestination,
+              onSwap: _swapLocations,
             ),
+
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(
@@ -82,7 +114,9 @@ class _DestinationPageState extends State<DestinationPage> {
                       });
                     },
                   ),
+
                   const SizedBox(height: 10),
+
                   QuickActionItems(
                     icon: Icons.map_outlined,
                     iconColor: const Color(0xFF388E9F),
@@ -90,6 +124,7 @@ class _DestinationPageState extends State<DestinationPage> {
                     subtitle: 'Pin origin or destination visually',
                     onTap: () {},
                   ),
+
                   const SizedBox(height: 24),
 
                   const Text(
@@ -100,9 +135,9 @@ class _DestinationPageState extends State<DestinationPage> {
                       color: Color(0xFF1E293B),
                     ),
                   ),
+
                   const SizedBox(height: 12),
 
-                  // Destination Suggestion Tiles
                   ..._recentPlaces.map(
                     (place) => PopularDestination(
                       title: place['title']!,
@@ -118,7 +153,8 @@ class _DestinationPageState extends State<DestinationPage> {
                 ],
               ),
             ),
-            const BottomActionBar(),
+
+            BottomActionBar(origin: origin, destination: destination),
           ],
         ),
       ),

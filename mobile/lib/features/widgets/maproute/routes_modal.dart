@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gibela_sa/core/models/journey.dart';
 import 'package:gibela_sa/core/theme/app_colors.dart';
 import 'package:gibela_sa/features/widgets/maproute/route_card.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -41,65 +42,65 @@ class TransitLeg {
 
 class RoutesModal extends StatelessWidget {
   final bool isLoading;
-  RoutesModal({super.key, required this.isLoading});
+  final Journey? journey;
 
-  final List<RouteOption> routes = [
-    RouteOption(
-      duration: '9h 19m',
-      departureTime: '20:17',
-      arrivalTime: '05:36 (Sun)',
-      fare: 'R 90',
-      frequencyText: 'every 15 min from Home Affairs, Malibongwe Drv',
-      legs: [
-        TransitLeg.walk(19),
-        TransitLeg.transit(
-          icon: Icons.directions_bus,
-          label: 'Metro...',
-          color: Colors.green.shade700,
-        ),
-        TransitLeg.transit(
-          icon: Icons.airport_shuttle,
-          label: 'Metro...',
-          color: Colors.green.shade700,
-        ),
-        TransitLeg.transit(
-          icon: Icons.airport_shuttle,
-          label: 'Metro...',
-          color: Colors.green.shade700,
-        ),
-        TransitLeg.walk(25),
-      ],
-    ),
-    RouteOption(
-      duration: '9h 28m',
-      departureTime: '20:17',
-      arrivalTime: '05:44 (Sun)',
-      fare: 'R 90',
-      frequencyText: 'every 20 min from Banbury Cross',
-      legs: [
-        TransitLeg.walk(19),
-        TransitLeg.transit(
-          icon: Icons.directions_bus,
-          label: 'Metro...',
-          color: Colors.green.shade700,
-        ),
-        TransitLeg.transit(
-          icon: Icons.airport_shuttle,
-          label: 'Metro...',
-          color: Colors.green.shade700,
-        ),
-        TransitLeg.transit(
-          icon: Icons.directions_bus,
-          label: 'Helen...',
-          color: Colors.green.shade700,
-        ),
-        TransitLeg.walk(24),
-      ],
-    ),
-  ];
+  const RoutesModal({
+    super.key,
+    required this.isLoading,
+    required this.journey,
+  });
+
+  RouteOption? _buildRouteOption() {
+    if (journey == null) return null;
+
+    final transitLegs = journey!.legs.map((leg) {
+      if (leg.isWalking) {
+        final seconds = leg.durationSeconds ?? 0;
+
+        final minutes = (seconds / 60).ceil();
+
+        return TransitLeg.walk(minutes);
+      }
+
+      return TransitLeg.transit(
+        icon: Icons.local_taxi_rounded,
+        label: journey!.route.name,
+        color: const Color(0xFFF95B2C),
+      );
+    }).toList();
+
+    final totalSeconds = journey!.legs.fold<double>(
+      0,
+      (total, leg) => total + (leg.durationSeconds ?? 0),
+    );
+
+    final totalMinutes = (totalSeconds / 60).ceil();
+
+    return RouteOption(
+      duration: _formatDuration(totalMinutes),
+      departureTime: '--:--',
+      arrivalTime: '--:--',
+      fare: 'Fare unavailable',
+      frequencyText: journey!.route.name,
+      legs: transitLegs,
+    );
+  }
+
+  String _formatDuration(int totalMinutes) {
+    final hours = totalMinutes ~/ 60;
+    final minutes = totalMinutes % 60;
+
+    if (hours == 0) {
+      return '${minutes}m';
+    }
+
+    return '${hours}h ${minutes}m';
+  }
 
   @override
   Widget build(BuildContext context) {
+    final route = _buildRouteOption();
+
     return DraggableScrollableSheet(
       initialChildSize: 0.42,
       minChildSize: 0.05,
@@ -128,7 +129,6 @@ class RoutesModal extends StatelessWidget {
                 ),
               ),
 
-              // Title and Actions
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -144,7 +144,9 @@ class RoutesModal extends StatelessWidget {
                         color: AppColors.textPrimary,
                       ),
                     ),
+
                     const Spacer(),
+
                     IconButton(
                       icon: const Icon(
                         Icons.tune,
@@ -152,6 +154,7 @@ class RoutesModal extends StatelessWidget {
                       ),
                       onPressed: () {},
                     ),
+
                     IconButton(
                       icon: const Icon(
                         Icons.share,
@@ -159,6 +162,7 @@ class RoutesModal extends StatelessWidget {
                       ),
                       onPressed: () {},
                     ),
+
                     IconButton(
                       icon: const Icon(
                         Icons.close,
@@ -171,16 +175,12 @@ class RoutesModal extends StatelessWidget {
               ),
 
               const Divider(color: AppColors.textPrimary, height: 1),
-              SliverSkeletonizer(
+
+              Skeletonizer(
                 enabled: isLoading,
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: routes.length,
-                  separatorBuilder: (_, _) =>
-                      const Divider(color: AppColors.textPrimary, thickness: 2),
-                  itemBuilder: (context, index) =>
-                      RouteCard(route: routes[index]),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: _buildContent(route),
                 ),
               ),
             ],
@@ -188,5 +188,42 @@ class RoutesModal extends StatelessWidget {
         );
       },
     );
+  }
+
+  Widget _buildContent(RouteOption? route) {
+    if (isLoading) {
+      return RouteCard(
+        route: RouteOption(
+          duration: '25 min',
+          departureTime: '12:00',
+          arrivalTime: '12:25',
+          fare: 'R 25',
+          frequencyText: 'Taxi route loading...',
+          legs: [
+            TransitLeg.walk(5),
+            TransitLeg.transit(
+              icon: Icons.local_taxi,
+              label: 'Taxi',
+              color: Colors.orange,
+            ),
+            TransitLeg.walk(4),
+          ],
+        ),
+      );
+    }
+
+    if (route == null) {
+      return const Padding(
+        padding: EdgeInsets.all(24),
+        child: Center(
+          child: Text(
+            'No taxi route found',
+            style: TextStyle(fontSize: 15, color: AppColors.textPrimary),
+          ),
+        ),
+      );
+    }
+
+    return RouteCard(route: route);
   }
 }

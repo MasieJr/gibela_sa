@@ -3,7 +3,6 @@ import 'package:gibela_sa/core/config/api_config.dart';
 import 'package:gibela_sa/core/models/journey.dart';
 import 'package:gibela_sa/core/models/place.dart';
 import 'package:gibela_sa/core/models/taxi_route.dart';
-import 'package:maplibre/maplibre.dart';
 
 class ApiClient {
   final Dio dio;
@@ -50,15 +49,20 @@ class ApiClient {
     }
   }
 
-  Future<Journey> planTrip(Geographic origin, Geographic destination) async {
+  Future<Journey> planTrip(
+    double originLat,
+    double originLon,
+    double destinationLat,
+    double destinationLon,
+  ) async {
     try {
       final response = await dio.get(
         '/journeys/plan',
         queryParameters: {
-          'fromLat': origin.lat,
-          'fromLng': origin.lon,
-          'toLat': destination.lat,
-          'toLng': destination.lon,
+          'fromLat': originLat,
+          'fromLng': originLon,
+          'toLat': destinationLat,
+          'toLng': destinationLon,
         },
       );
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gibela_sa/core/models/journey.dart';
 import 'package:gibela_sa/core/models/place.dart';
 import 'package:gibela_sa/core/network/api_client.dart';
 import 'package:gibela_sa/features/widgets/maproute/map_view.dart';
@@ -21,13 +22,47 @@ class MapRoutePage extends StatefulWidget {
 
 class _MapRoutePageState extends State<MapRoutePage> {
   late final ApiClient _api;
+
   bool isLoading = true;
+  Journey? journey;
 
   @override
   void initState() {
     super.initState();
 
     _api = ApiClient();
+
+    getRoutes();
+  }
+
+  Future<void> getRoutes() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final result = await _api.planTrip(
+        widget.origin.latitude,
+        widget.origin.longitude,
+        widget.destination.latitude,
+        widget.destination.longitude,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        journey = result;
+        isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        isLoading = false;
+      });
+
+      debugPrint('Error getting journey: $e');
+    }
   }
 
   @override
@@ -35,7 +70,8 @@ class _MapRoutePageState extends State<MapRoutePage> {
     return Scaffold(
       body: Stack(
         children: [
-          MapView(),
+          MapView(journey: journey),
+
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(
@@ -48,8 +84,8 @@ class _MapRoutePageState extends State<MapRoutePage> {
               ),
             ),
           ),
-          // ActionButtons(),
-          RoutesModal(isLoading: isLoading),
+
+          RoutesModal(isLoading: isLoading, journey: journey),
         ],
       ),
     );

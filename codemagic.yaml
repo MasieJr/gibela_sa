@@ -20,37 +20,37 @@ workflows:
       - mobile/build/app/outputs/flutter-apk/*.apk
 
   ios:
-  name: GibelaSA iOS IPA
+      name: GibelaSA iOS IPA
 
-  environment:
-    flutter: stable
-    xcode: latest
-    cocoapods: default
+      environment:
+        flutter: stable
+        xcode: latest
+        cocoapods: default
 
-  scripts:
-    - name: Get dependencies
-      script: |
-        cd mobile
-        flutter pub get
+      scripts:
+        - name: Get dependencies
+          script: |
+            cd mobile
+            flutter pub get
 
-    - name: Build iOS without signing
-      script: |
-        cd mobile
-        flutter build ios --release --no-codesign
+        - name: Build iOS without signing
+          script: |
+            cd mobile
+            flutter build ios --release --no-codesign
 
-    - name: Create IPA for Sideloadly
-      script: |
-        cd mobile
+        - name: Create IPA for Sideloadly
+          script: |
+            cd mobile
 
-        rm -rf Payload
-        mkdir Payload
+            rm -rf Payload
+            mkdir Payload
 
-        cp -R build/ios/iphoneos/Runner.app Payload/
+            cp -R build/ios/iphoneos/Runner.app Payload/
 
-        zip -r GibelaSA.ipa Payload
+            zip -r GibelaSA.ipa Payload
 
-        rm -rf Payload
+            rm -rf Payload
 
-  artifacts:
-    - mobile/GibelaSA.ipa
-    - mobile/build/ios/iphoneos/Runner.app
+      artifacts:
+        - mobile/GibelaSA.ipa
+        - mobile/build/ios/iphoneos/Runner.app

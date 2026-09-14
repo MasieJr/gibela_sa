@@ -19,7 +19,6 @@ workflows:
     artifacts:
       - mobile/build/app/outputs/flutter-apk/*.apk
 
-
   ios:
   name: GibelaSA iOS IPA
 

@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { DatabaseService } from '../database/database.service';
-
 import { WalkingService } from '../walking/walking.service';
 import { PlanJourneyDto } from './dto/plan-journey.dto';
 
@@ -14,6 +13,7 @@ export class JourneysService {
 
   async plan(dto: PlanJourneyDto) {
     const { fromLat, fromLng, toLat, toLng } = dto;
+    console.log(fromLat, fromLng, toLat, toLng);
 
     const result = await this.database.query(
       `
@@ -32,7 +32,16 @@ export class JourneysService {
 
       candidates AS (
         SELECT
-          r.*,
+          r.id,
+          r.name,
+          r.geometry,
+          r.verified,
+          r.fare,
+          r.origin_rank_id,
+          r.destination_rank_id,
+
+          origin_rank.name AS origin_rank_name,
+          destination_rank.name AS destination_rank_name,
 
           ST_LineLocatePoint(
             r.geometry,
@@ -60,19 +69,26 @@ export class JourneysService {
             input.destination_point::geography
           ) AS walking_from_route
 
-        FROM taxi_routes r
+        FROM public.routes r
+
+        JOIN public.taxi_ranks origin_rank
+          ON origin_rank.id = r.origin_rank_id
+
+        JOIN public.taxi_ranks destination_rank
+          ON destination_rank.id = r.destination_rank_id
+
         CROSS JOIN input
 
         WHERE
-          ST_DWithin(
+          r.geometry IS NOT NULL
+
+          AND ST_DWithin(
             r.geometry::geography,
             input.user_point::geography,
             1500
           )
 
-          AND
-
-          ST_DWithin(
+          AND ST_DWithin(
             r.geometry::geography,
             input.destination_point::geography,
             1500
@@ -82,9 +98,13 @@ export class JourneysService {
       SELECT
         id,
         name,
-        origin,
-        destination,
-        status,
+        verified,
+        fare,
+
+        origin_rank_id,
+        destination_rank_id,
+        origin_rank_name,
+        destination_rank_name,
 
         walking_to_route,
         walking_from_route,
@@ -171,9 +191,20 @@ export class JourneysService {
       route: {
         id: route.id,
         name: route.name,
-        origin: route.origin,
-        destination: route.destination,
-        status: route.status,
+
+        originRank: {
+          id: route.origin_rank_id,
+          name: route.origin_rank_name,
+        },
+
+        destinationRank: {
+          id: route.destination_rank_id,
+          name: route.destination_rank_name,
+        },
+
+        fare: route.fare !== null ? Number(route.fare) : null,
+
+        verified: route.verified,
       },
 
       legs: [

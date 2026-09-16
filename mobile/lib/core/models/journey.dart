@@ -44,26 +44,44 @@ class Journey {
 class JourneyRoute {
   final String id;
   final String name;
-  final String origin;
-  final String destination;
-  final String status;
+  final TaxiRankRef originRank;
+  final TaxiRankRef destinationRank;
+  final double? fare;
+  final bool verified;
 
   const JourneyRoute({
     required this.id,
     required this.name,
-    required this.origin,
-    required this.destination,
-    required this.status,
+    required this.originRank,
+    required this.destinationRank,
+    this.fare,
+    required this.verified,
   });
 
   factory JourneyRoute.fromJson(Map<String, dynamic> json) {
     return JourneyRoute(
       id: json['id'].toString(),
       name: json['name'] as String,
-      origin: json['origin'] as String,
-      destination: json['destination'] as String,
-      status: json['status'] as String,
+      originRank: TaxiRankRef.fromJson(
+        json['originRank'] as Map<String, dynamic>,
+      ),
+      destinationRank: TaxiRankRef.fromJson(
+        json['destinationRank'] as Map<String, dynamic>,
+      ),
+      fare: (json['fare'] as num?)?.toDouble(),
+      verified: json['verified'] as bool? ?? false,
     );
+  }
+}
+
+class TaxiRankRef {
+  final String id;
+  final String name;
+
+  const TaxiRankRef({required this.id, required this.name});
+
+  factory TaxiRankRef.fromJson(Map<String, dynamic> json) {
+    return TaxiRankRef(id: json['id'].toString(), name: json['name'] as String);
   }
 }
 

@@ -188,25 +188,6 @@ export class JourneysService {
         longitude: dropOffLng,
       },
 
-      route: {
-        id: route.id,
-        name: route.name,
-
-        originRank: {
-          id: route.origin_rank_id,
-          name: route.origin_rank_name,
-        },
-
-        destinationRank: {
-          id: route.destination_rank_id,
-          name: route.destination_rank_name,
-        },
-
-        fare: route.fare !== null ? Number(route.fare) : null,
-
-        verified: route.verified,
-      },
-
       legs: [
         {
           type: 'walk',
@@ -216,6 +197,24 @@ export class JourneysService {
         {
           type: 'taxi',
           geometry: route.journey_geometry,
+          route: {
+            id: route.id,
+            name: route.name,
+
+            originRank: {
+              id: route.origin_rank_id,
+              name: route.origin_rank_name,
+            },
+
+            destinationRank: {
+              id: route.destination_rank_id,
+              name: route.destination_rank_name,
+            },
+
+            fare: route.fare !== null ? Number(route.fare) : null,
+
+            verified: route.verified,
+          },
         },
 
         {

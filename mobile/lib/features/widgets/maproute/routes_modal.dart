@@ -51,37 +51,67 @@ class RoutesModal extends StatelessWidget {
   });
 
   RouteOption? _buildRouteOption() {
-    if (journey == null) return null;
+    final currentJourney = journey;
 
-    final transitLegs = journey!.legs.map((leg) {
+    if (currentJourney == null) {
+      return null;
+    }
+
+    final transitLegs = currentJourney.legs.map((leg) {
       if (leg.isWalking) {
         final seconds = leg.durationSeconds ?? 0;
-
         final minutes = (seconds / 60).ceil();
 
         return TransitLeg.walk(minutes);
       }
 
+      if (leg.isTaxi) {
+        return TransitLeg.transit(
+          icon: Icons.local_taxi_rounded,
+          label: leg.route?.name ?? 'Taxi',
+          color: const Color(0xFFF95B2C),
+        );
+      }
+
+      // for future modes of transit
       return TransitLeg.transit(
-        icon: Icons.local_taxi_rounded,
-        label: journey!.route.name,
-        color: const Color(0xFFF95B2C),
+        icon: Icons.route,
+        label: leg.type,
+        color: Colors.grey,
       );
     }).toList();
 
-    final totalSeconds = journey!.legs.fold<double>(
-      0,
-      (total, leg) => total + (leg.durationSeconds ?? 0),
-    );
+    final taxiLeg = currentJourney.taxiLeg;
+    final taxiRoute = taxiLeg?.route;
+    final walkingSeconds = currentJourney.legs
+        .where((leg) => leg.isWalking)
+        .fold<double>(0, (total, leg) => total + (leg.durationSeconds ?? 0));
 
-    final totalMinutes = (totalSeconds / 60).ceil();
+    final walkingMinutes = (walkingSeconds / 60).ceil();
+
+    final fare = taxiRoute?.fare;
 
     return RouteOption(
-      duration: _formatDuration(totalMinutes),
+      duration: taxiLeg?.durationSeconds != null
+          ? _formatDuration(
+              currentJourney.legs
+                  .fold<double>(
+                    0,
+                    (total, leg) => total + (leg.durationSeconds ?? 0),
+                  )
+                  .dividedBy(60)
+                  .ceil(),
+            )
+          : '${_formatDuration(walkingMinutes)} walking',
+
       departureTime: '--:--',
+
       arrivalTime: '--:--',
-      fare: 'Fare unavailable',
-      frequencyText: journey!.route.name,
+
+      fare: fare != null ? 'R ${_formatFare(fare)}' : 'Fare unavailable',
+
+      frequencyText: taxiRoute?.name ?? 'Taxi route',
+
       legs: transitLegs,
     );
   }
@@ -94,7 +124,19 @@ class RoutesModal extends StatelessWidget {
       return '${minutes}m';
     }
 
+    if (minutes == 0) {
+      return '${hours}h';
+    }
+
     return '${hours}h ${minutes}m';
+  }
+
+  String _formatFare(double fare) {
+    if (fare == fare.roundToDouble()) {
+      return fare.toInt().toString();
+    }
+
+    return fare.toStringAsFixed(2);
   }
 
   @override
@@ -226,4 +268,8 @@ class RoutesModal extends StatelessWidget {
 
     return RouteCard(route: route);
   }
+}
+
+extension on double {
+  double dividedBy(double value) => this / value;
 }

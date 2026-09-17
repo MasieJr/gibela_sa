@@ -49,7 +49,7 @@ class _MapRoutePageState extends State<MapRoutePage> {
       );
 
       if (!mounted) return;
-
+      debugPrint(result.toString());
       setState(() {
         journey = result;
         isLoading = false;

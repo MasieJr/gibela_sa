@@ -3,6 +3,6 @@ class ApiConfig {
 
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://192.168.89.6:3000',
+    defaultValue: 'http://gibelasa.masieseremu.co.za',
   );
 }

@@ -22,9 +22,9 @@ class MapRoutePage extends StatefulWidget {
 
 class _MapRoutePageState extends State<MapRoutePage> {
   late final ApiClient _api;
-
   bool isLoading = true;
-  Journey? journey;
+  List<Journey> journeys = [];
+  Journey? selectedJourney;
 
   @override
   void initState() {
@@ -41,7 +41,7 @@ class _MapRoutePageState extends State<MapRoutePage> {
     });
 
     try {
-      final result = await _api.planTrip(
+      final results = await _api.planTrip(
         widget.origin.latitude,
         widget.origin.longitude,
         widget.destination.latitude,
@@ -49,20 +49,37 @@ class _MapRoutePageState extends State<MapRoutePage> {
       );
 
       if (!mounted) return;
-      debugPrint(result.toString());
+
+      debugPrint('Found ${results.length} journeys');
+
+      for (final journey in results) {
+        final taxiLeg = journey.taxiLeg;
+
+        debugPrint('Route: ${taxiLeg?.route?.name}');
+      }
+
       setState(() {
-        journey = result;
+        journeys = results;
+        selectedJourney = results.isNotEmpty ? results.first : null;
         isLoading = false;
       });
     } catch (e) {
       if (!mounted) return;
 
       setState(() {
+        journeys = [];
+        selectedJourney = null;
         isLoading = false;
       });
 
-      debugPrint('Error getting journey: $e');
+      debugPrint('Error getting journeys: $e');
     }
+  }
+
+  void _selectJourney(Journey journey) {
+    setState(() {
+      selectedJourney = journey;
+    });
   }
 
   @override
@@ -70,7 +87,7 @@ class _MapRoutePageState extends State<MapRoutePage> {
     return Scaffold(
       body: Stack(
         children: [
-          MapView(journey: journey),
+          MapView(journey: selectedJourney),
 
           SafeArea(
             child: Padding(
@@ -85,7 +102,12 @@ class _MapRoutePageState extends State<MapRoutePage> {
             ),
           ),
 
-          RoutesModal(isLoading: isLoading, journey: journey),
+          RoutesModal(
+            isLoading: isLoading,
+            journeys: journeys,
+            selectedJourney: selectedJourney,
+            onJourneySelected: _selectJourney,
+          ),
         ],
       ),
     );

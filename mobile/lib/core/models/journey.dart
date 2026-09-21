@@ -6,7 +6,6 @@ class Journey {
   final Geographic destination;
   final Geographic boardingPoint;
   final Geographic dropOffPoint;
-  final JourneyRoute route;
   final List<JourneyLeg> legs;
 
   const Journey({
@@ -15,18 +14,22 @@ class Journey {
     required this.destination,
     required this.boardingPoint,
     required this.dropOffPoint,
-    required this.route,
     required this.legs,
   });
 
   factory Journey.fromJson(Map<String, dynamic> json) {
     return Journey(
       type: json['type'] as String,
-      origin: _geographicFromJson(json['origin']),
-      destination: _geographicFromJson(json['destination']),
-      boardingPoint: _geographicFromJson(json['boardingPoint']),
-      dropOffPoint: _geographicFromJson(json['dropOffPoint']),
-      route: JourneyRoute.fromJson(json['route'] as Map<String, dynamic>),
+      origin: _geographicFromJson(json['origin'] as Map<String, dynamic>),
+      destination: _geographicFromJson(
+        json['destination'] as Map<String, dynamic>,
+      ),
+      boardingPoint: _geographicFromJson(
+        json['boardingPoint'] as Map<String, dynamic>,
+      ),
+      dropOffPoint: _geographicFromJson(
+        json['dropOffPoint'] as Map<String, dynamic>,
+      ),
       legs: (json['legs'] as List<dynamic>)
           .map((leg) => JourneyLeg.fromJson(leg as Map<String, dynamic>))
           .toList(),
@@ -39,6 +42,67 @@ class Journey {
       lat: (json['latitude'] as num).toDouble(),
     );
   }
+
+  /// Convenience getter for direct journeys.
+  ///
+  /// Returns the first taxi leg.
+  JourneyLeg? get taxiLeg {
+    for (final leg in legs) {
+      if (leg.isTaxi) {
+        return leg;
+      }
+    }
+
+    return null;
+  }
+
+  /// Convenience getter for all walking legs.
+  List<JourneyLeg> get walkingLegs =>
+      legs.where((leg) => leg.isWalking).toList();
+}
+
+class JourneyLeg {
+  final String type;
+
+  /// Usually available for walking legs.
+  final double? distanceMeters;
+  final double? durationSeconds;
+
+  /// Every current leg contains geometry.
+  final JourneyGeometry geometry;
+
+  /// Only available when type == 'taxi'.
+  final JourneyRoute? route;
+
+  const JourneyLeg({
+    required this.type,
+    this.distanceMeters,
+    this.durationSeconds,
+    required this.geometry,
+    this.route,
+  });
+
+  factory JourneyLeg.fromJson(Map<String, dynamic> json) {
+    return JourneyLeg(
+      type: json['type'] as String,
+
+      distanceMeters: (json['distanceMeters'] as num?)?.toDouble(),
+
+      durationSeconds: (json['durationSeconds'] as num?)?.toDouble(),
+
+      geometry: JourneyGeometry.fromJson(
+        json['geometry'] as Map<String, dynamic>,
+      ),
+
+      route: json['route'] != null
+          ? JourneyRoute.fromJson(json['route'] as Map<String, dynamic>)
+          : null,
+    );
+  }
+
+  bool get isWalking => type == 'walk';
+
+  bool get isTaxi => type == 'taxi';
 }
 
 class JourneyRoute {
@@ -61,14 +125,19 @@ class JourneyRoute {
   factory JourneyRoute.fromJson(Map<String, dynamic> json) {
     return JourneyRoute(
       id: json['id'].toString(),
+
       name: json['name'] as String,
+
       originRank: TaxiRankRef.fromJson(
         json['originRank'] as Map<String, dynamic>,
       ),
+
       destinationRank: TaxiRankRef.fromJson(
         json['destinationRank'] as Map<String, dynamic>,
       ),
+
       fare: (json['fare'] as num?)?.toDouble(),
+
       verified: json['verified'] as bool? ?? false,
     );
   }
@@ -85,56 +154,25 @@ class TaxiRankRef {
   }
 }
 
-class JourneyLeg {
-  final String type;
-  final double? distanceMeters;
-  final double? durationSeconds;
-  final JourneyGeometry geometry;
-
-  const JourneyLeg({
-    required this.type,
-    this.distanceMeters,
-    this.durationSeconds,
-    required this.geometry,
-  });
-
-  factory JourneyLeg.fromJson(Map<String, dynamic> json) {
-    return JourneyLeg(
-      type: json['type'] as String,
-      distanceMeters: (json['distanceMeters'] as num?)?.toDouble(),
-      durationSeconds: (json['durationSeconds'] as num?)?.toDouble(),
-      geometry: JourneyGeometry.fromJson(
-        json['geometry'] as Map<String, dynamic>,
-      ),
-    );
-  }
-
-  bool get isWalking => type == 'walk';
-
-  bool get isTaxi => type == 'taxi';
-}
-
 class JourneyGeometry {
   final String type;
 
-  /// Normalized into a list of lines.
+  /// Geometry is normalized into:
   ///
-  /// LineString:
   /// [
-  ///   [point, point, point]
+  ///   [point, point, point],
+  ///   [point, point, point],
   /// ]
   ///
-  /// MultiLineString:
-  /// [
-  ///   [point, point],
-  ///   [point, point]
-  /// ]
+  /// A LineString therefore becomes a list containing one line.
+  /// A MultiLineString may contain multiple lines.
   final List<List<Geographic>> coordinates;
 
   const JourneyGeometry({required this.type, required this.coordinates});
 
   factory JourneyGeometry.fromJson(Map<String, dynamic> json) {
     final type = json['type'] as String;
+
     final rawCoordinates = json['coordinates'] as List<dynamic>;
 
     switch (type) {
@@ -172,15 +210,18 @@ class JourneyGeometry {
   }
 
   static Geographic _coordinateToGeographic(List<dynamic> coordinate) {
+    if (coordinate.length < 2) {
+      throw const FormatException('Invalid GeoJSON coordinate.');
+    }
+
+    // GeoJSON = [longitude, latitude]
     return Geographic(
       lon: (coordinate[0] as num).toDouble(),
       lat: (coordinate[1] as num).toDouble(),
     );
   }
 
-  /// Useful when you just need one continuous list
-  /// of points for MapLibre.
-  List<Geographic> get flattened {
-    return coordinates.expand((line) => line).toList();
-  }
+  /// Useful when MapLibre expects one continuous collection
+  /// of coordinates.
+  List<Geographic> get flattened => coordinates.expand((line) => line).toList();
 }

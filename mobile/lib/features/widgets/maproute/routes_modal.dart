@@ -9,7 +9,7 @@ class RouteOption {
   final String departureTime;
   final String arrivalTime;
   final String fare;
-  final String frequencyText;
+  final String routeName;
   final List<TransitLeg> legs;
 
   RouteOption({
@@ -17,7 +17,7 @@ class RouteOption {
     required this.departureTime,
     required this.arrivalTime,
     required this.fare,
-    required this.frequencyText,
+    required this.routeName,
     required this.legs,
   });
 }
@@ -42,22 +42,20 @@ class TransitLeg {
 
 class RoutesModal extends StatelessWidget {
   final bool isLoading;
-  final Journey? journey;
+  final List<Journey> journeys;
+  final Journey? selectedJourney;
+  final ValueChanged<Journey> onJourneySelected;
 
   const RoutesModal({
     super.key,
     required this.isLoading,
-    required this.journey,
+    required this.journeys,
+    required this.selectedJourney,
+    required this.onJourneySelected,
   });
 
-  RouteOption? _buildRouteOption() {
-    final currentJourney = journey;
-
-    if (currentJourney == null) {
-      return null;
-    }
-
-    final transitLegs = currentJourney.legs.map((leg) {
+  RouteOption _buildRouteOption(Journey journey) {
+    final transitLegs = journey.legs.map((leg) {
       if (leg.isWalking) {
         final seconds = leg.durationSeconds ?? 0;
         final minutes = (seconds / 60).ceil();
@@ -73,7 +71,6 @@ class RoutesModal extends StatelessWidget {
         );
       }
 
-      // for future modes of transit
       return TransitLeg.transit(
         icon: Icons.route,
         label: leg.type,
@@ -81,9 +78,9 @@ class RoutesModal extends StatelessWidget {
       );
     }).toList();
 
-    final taxiLeg = currentJourney.taxiLeg;
+    final taxiLeg = journey.taxiLeg;
     final taxiRoute = taxiLeg?.route;
-    final walkingSeconds = currentJourney.legs
+    final walkingSeconds = journey.legs
         .where((leg) => leg.isWalking)
         .fold<double>(0, (total, leg) => total + (leg.durationSeconds ?? 0));
 
@@ -92,17 +89,7 @@ class RoutesModal extends StatelessWidget {
     final fare = taxiRoute?.fare;
 
     return RouteOption(
-      duration: taxiLeg?.durationSeconds != null
-          ? _formatDuration(
-              currentJourney.legs
-                  .fold<double>(
-                    0,
-                    (total, leg) => total + (leg.durationSeconds ?? 0),
-                  )
-                  .dividedBy(60)
-                  .ceil(),
-            )
-          : '${_formatDuration(walkingMinutes)} walking',
+      duration: '${_formatDuration(walkingMinutes)} walking',
 
       departureTime: '--:--',
 
@@ -110,7 +97,7 @@ class RoutesModal extends StatelessWidget {
 
       fare: fare != null ? 'R ${_formatFare(fare)}' : 'Fare unavailable',
 
-      frequencyText: taxiRoute?.name ?? 'Taxi route',
+      routeName: taxiRoute?.name ?? 'Taxi route',
 
       legs: transitLegs,
     );
@@ -141,8 +128,6 @@ class RoutesModal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final route = _buildRouteOption();
-
     return DraggableScrollableSheet(
       initialChildSize: 0.42,
       minChildSize: 0.05,
@@ -222,7 +207,7 @@ class RoutesModal extends StatelessWidget {
                 enabled: isLoading,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: _buildContent(route),
+                  child: _buildContent(),
                 ),
               ),
             ],
@@ -232,7 +217,7 @@ class RoutesModal extends StatelessWidget {
     );
   }
 
-  Widget _buildContent(RouteOption? route) {
+  Widget _buildContent() {
     if (isLoading) {
       return RouteCard(
         route: RouteOption(
@@ -240,7 +225,7 @@ class RoutesModal extends StatelessWidget {
           departureTime: '12:00',
           arrivalTime: '12:25',
           fare: 'R 25',
-          frequencyText: 'Taxi route loading...',
+          routeName: 'Taxi route loading...',
           legs: [
             TransitLeg.walk(5),
             TransitLeg.transit(
@@ -254,7 +239,7 @@ class RoutesModal extends StatelessWidget {
       );
     }
 
-    if (route == null) {
+    if (journeys.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(24),
         child: Center(
@@ -266,10 +251,20 @@ class RoutesModal extends StatelessWidget {
       );
     }
 
-    return RouteCard(route: route);
-  }
-}
+    return Column(
+      children: journeys.map((journey) {
+        final routeOption = _buildRouteOption(journey);
 
-extension on double {
-  double dividedBy(double value) => this / value;
+        final isSelected = identical(journey, selectedJourney);
+
+        return RouteCard(
+          route: routeOption,
+          isSelected: isSelected,
+          onTap: () {
+            onJourneySelected(journey);
+          },
+        );
+      }).toList(),
+    );
+  }
 }

@@ -49,7 +49,7 @@ class ApiClient {
     }
   }
 
-  Future<Journey> planTrip(
+  Future<List<Journey>> planTrip(
     double originLat,
     double originLon,
     double destinationLat,
@@ -65,8 +65,12 @@ class ApiClient {
           'toLng': destinationLon,
         },
       );
+      final data = response.data as Map<String, dynamic>;
+      final journeysJson = data['journeys'] as List<dynamic>;
 
-      return Journey.fromJson(response.data);
+      return journeysJson
+          .map((json) => Journey.fromJson(json as Map<String, dynamic>))
+          .toList();
     } on DioException catch (e) {
       print('Search error: ${e.message}');
       rethrow;

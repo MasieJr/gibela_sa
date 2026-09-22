@@ -11,6 +11,7 @@ class RouteOption {
   final String fare;
   final String routeName;
   final List<TransitLeg> legs;
+  final bool hasTransfer;
 
   RouteOption({
     required this.duration,
@@ -19,6 +20,7 @@ class RouteOption {
     required this.fare,
     required this.routeName,
     required this.legs,
+    this.hasTransfer = false,
   });
 }
 
@@ -27,17 +29,27 @@ class TransitLeg {
   final String? label;
   final Color? color;
   final int? walkMinutes;
+  final bool isTransfer;
 
   TransitLeg.walk(this.walkMinutes)
-    : icon = Icons.directions_walk,
-      label = null,
-      color = Colors.grey;
+    : icon = Icons.directions_walk_rounded,
+      label = walkMinutes != null ? '$walkMinutes min' : null,
+      color = Colors.grey,
+      isTransfer = false;
 
   TransitLeg.transit({
     required this.icon,
     required this.label,
     required this.color,
-  }) : walkMinutes = null;
+  }) : walkMinutes = null,
+       isTransfer = false;
+
+  TransitLeg.transfer(String rankName)
+    : icon = Icons.swap_horiz_rounded,
+      label = 'Transfer at $rankName',
+      color = const Color(0xFF475569),
+      walkMinutes = null,
+      isTransfer = true;
 }
 
 class RoutesModal extends StatelessWidget {
@@ -55,51 +67,81 @@ class RoutesModal extends StatelessWidget {
   });
 
   RouteOption _buildRouteOption(Journey journey) {
-    final transitLegs = journey.legs.map((leg) {
+    final transitLegs = <TransitLeg>[];
+
+    for (int i = 0; i < journey.legs.length; i++) {
+      final leg = journey.legs[i];
+
       if (leg.isWalking) {
         final seconds = leg.durationSeconds ?? 0;
+
         final minutes = (seconds / 60).ceil();
 
-        return TransitLeg.walk(minutes);
+        transitLegs.add(TransitLeg.walk(minutes));
+
+        continue;
       }
 
       if (leg.isTaxi) {
-        return TransitLeg.transit(
-          icon: Icons.local_taxi_rounded,
-          label: leg.route?.name ?? 'Taxi',
-          color: const Color(0xFFF95B2C),
+        transitLegs.add(
+          TransitLeg.transit(
+            icon: Icons.local_taxi_rounded,
+            label: leg.route?.name ?? 'Taxi',
+            color: const Color(0xFFF95B2C),
+          ),
         );
+
+        // If another taxi immediately follows,
+        // the passenger changes taxi at the
+        // current route's destination rank.
+        if (i + 1 < journey.legs.length && journey.legs[i + 1].isTaxi) {
+          final rankName = leg.route?.destinationRank.name ?? 'Taxi Rank';
+
+          transitLegs.add(TransitLeg.transfer(rankName));
+        }
+
+        continue;
       }
 
-      return TransitLeg.transit(
-        icon: Icons.route,
-        label: leg.type,
-        color: Colors.grey,
+      transitLegs.add(
+        TransitLeg.transit(
+          icon: Icons.route,
+          label: leg.type,
+          color: Colors.grey,
+        ),
       );
-    }).toList();
+    }
 
-    final taxiLeg = journey.taxiLeg;
-    final taxiRoute = taxiLeg?.route;
-    final walkingSeconds = journey.legs
-        .where((leg) => leg.isWalking)
-        .fold<double>(0, (total, leg) => total + (leg.durationSeconds ?? 0));
+    final walkingMinutes = (journey.totalWalkingDuration / 60).ceil();
 
-    final walkingMinutes = (walkingSeconds / 60).ceil();
+    String routeName;
 
-    final fare = taxiRoute?.fare;
+    if (journey.hasTransfer) {
+      routeName = journey.taxiLegs
+          .map((leg) => leg.route?.name ?? 'Taxi')
+          .join(' → ');
+    } else {
+      routeName = journey.taxiLeg?.route?.name ?? 'Taxi route';
+    }
 
     return RouteOption(
+      // Taxi duration isn't available yet,
+      // so make it clear this is walking time.
       duration: '${_formatDuration(walkingMinutes)} walking',
 
       departureTime: '--:--',
 
       arrivalTime: '--:--',
 
-      fare: fare != null ? 'R ${_formatFare(fare)}' : 'Fare unavailable',
+      fare: journey.totalFare > 0
+          ? 'R ${_formatFare(journey.totalFare)}'
+          : 'Fare unavailable',
 
-      routeName: taxiRoute?.name ?? 'Taxi route',
+      routeName: routeName,
 
       legs: transitLegs,
+
+      hasTransfer: journey.hasTransfer,
     );
   }
 
@@ -143,7 +185,6 @@ class RoutesModal extends StatelessWidget {
             controller: scrollController,
             padding: EdgeInsets.zero,
             children: [
-              // Grab handle
               Center(
                 child: Container(
                   margin: const EdgeInsets.symmetric(vertical: 8),
@@ -221,17 +262,17 @@ class RoutesModal extends StatelessWidget {
     if (isLoading) {
       return RouteCard(
         route: RouteOption(
-          duration: '25 min',
-          departureTime: '12:00',
-          arrivalTime: '12:25',
+          duration: '25m walking',
+          departureTime: '--:--',
+          arrivalTime: '--:--',
           fare: 'R 25',
           routeName: 'Taxi route loading...',
           legs: [
             TransitLeg.walk(5),
             TransitLeg.transit(
-              icon: Icons.local_taxi,
+              icon: Icons.local_taxi_rounded,
               label: 'Taxi',
-              color: Colors.orange,
+              color: const Color(0xFFF95B2C),
             ),
             TransitLeg.walk(4),
           ],

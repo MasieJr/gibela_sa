@@ -111,7 +111,7 @@ export class JourneysService {
           AND ST_DWithin(
             r.geometry::geography,
             input.destination_point::geography,
-            2500
+            1500
           )
       )
 
@@ -385,7 +385,7 @@ export class JourneysService {
         AND ST_DWithin(
           second_route.geometry::geography,
           input.destination_point::geography,
-          2500
+          1500
         )
 
         -- Don't connect a route to itself

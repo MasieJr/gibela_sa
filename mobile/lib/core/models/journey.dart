@@ -43,9 +43,11 @@ class Journey {
     );
   }
 
-  /// Convenience getter for direct journeys.
-  ///
-  /// Returns the first taxi leg.
+  List<JourneyLeg> get taxiLegs => legs.where((leg) => leg.isTaxi).toList();
+
+  List<JourneyLeg> get walkingLegs =>
+      legs.where((leg) => leg.isWalking).toList();
+
   JourneyLeg? get taxiLeg {
     for (final leg in legs) {
       if (leg.isTaxi) {
@@ -56,22 +58,48 @@ class Journey {
     return null;
   }
 
-  /// Convenience getter for all walking legs.
-  List<JourneyLeg> get walkingLegs =>
-      legs.where((leg) => leg.isWalking).toList();
+  double get totalWalkingDistance {
+    return walkingLegs.fold(
+      0,
+      (total, leg) => total + (leg.distanceMeters ?? 0),
+    );
+  }
+
+  double get totalWalkingDuration {
+    return walkingLegs.fold(
+      0,
+      (total, leg) => total + (leg.durationSeconds ?? 0),
+    );
+  }
+
+  double get totalFare {
+    return taxiLegs.fold(0, (total, leg) => total + (leg.route?.fare ?? 0));
+  }
+
+  bool get hasTransfer => taxiLegs.length > 1;
+
+  TaxiRankRef? get transferRank {
+    if (!hasTransfer) {
+      return null;
+    }
+
+    return taxiLegs.first.route?.destinationRank;
+  }
+
+  Geographic? get transferPoint {
+    if (!hasTransfer) {
+      return null;
+    }
+
+    return taxiLegs.first.geometry.lastPoint;
+  }
 }
 
 class JourneyLeg {
   final String type;
-
-  /// Usually available for walking legs.
   final double? distanceMeters;
   final double? durationSeconds;
-
-  /// Every current leg contains geometry.
   final JourneyGeometry geometry;
-
-  /// Only available when type == 'taxi'.
   final JourneyRoute? route;
 
   const JourneyLeg({
@@ -85,15 +113,11 @@ class JourneyLeg {
   factory JourneyLeg.fromJson(Map<String, dynamic> json) {
     return JourneyLeg(
       type: json['type'] as String,
-
       distanceMeters: (json['distanceMeters'] as num?)?.toDouble(),
-
       durationSeconds: (json['durationSeconds'] as num?)?.toDouble(),
-
       geometry: JourneyGeometry.fromJson(
         json['geometry'] as Map<String, dynamic>,
       ),
-
       route: json['route'] != null
           ? JourneyRoute.fromJson(json['route'] as Map<String, dynamic>)
           : null,
@@ -125,19 +149,14 @@ class JourneyRoute {
   factory JourneyRoute.fromJson(Map<String, dynamic> json) {
     return JourneyRoute(
       id: json['id'].toString(),
-
       name: json['name'] as String,
-
       originRank: TaxiRankRef.fromJson(
         json['originRank'] as Map<String, dynamic>,
       ),
-
       destinationRank: TaxiRankRef.fromJson(
         json['destinationRank'] as Map<String, dynamic>,
       ),
-
       fare: (json['fare'] as num?)?.toDouble(),
-
       verified: json['verified'] as bool? ?? false,
     );
   }
@@ -157,15 +176,6 @@ class TaxiRankRef {
 class JourneyGeometry {
   final String type;
 
-  /// Geometry is normalized into:
-  ///
-  /// [
-  ///   [point, point, point],
-  ///   [point, point, point],
-  /// ]
-  ///
-  /// A LineString therefore becomes a list containing one line.
-  /// A MultiLineString may contain multiple lines.
   final List<List<Geographic>> coordinates;
 
   const JourneyGeometry({required this.type, required this.coordinates});
@@ -214,14 +224,39 @@ class JourneyGeometry {
       throw const FormatException('Invalid GeoJSON coordinate.');
     }
 
-    // GeoJSON = [longitude, latitude]
     return Geographic(
       lon: (coordinate[0] as num).toDouble(),
       lat: (coordinate[1] as num).toDouble(),
     );
   }
 
-  /// Useful when MapLibre expects one continuous collection
-  /// of coordinates.
   List<Geographic> get flattened => coordinates.expand((line) => line).toList();
+
+  Geographic? get firstPoint {
+    if (coordinates.isEmpty) {
+      return null;
+    }
+
+    for (final line in coordinates) {
+      if (line.isNotEmpty) {
+        return line.first;
+      }
+    }
+
+    return null;
+  }
+
+  Geographic? get lastPoint {
+    if (coordinates.isEmpty) {
+      return null;
+    }
+
+    for (int i = coordinates.length - 1; i >= 0; i--) {
+      if (coordinates[i].isNotEmpty) {
+        return coordinates[i].last;
+      }
+    }
+
+    return null;
+  }
 }

@@ -36,11 +36,19 @@ class Journey {
     );
   }
 
+  double get totalTaxiDistance {
+    return taxiLegs.fold(0, (total, leg) => total + (leg.distanceMeters ?? 0));
+  }
+
   static Geographic _geographicFromJson(Map<String, dynamic> json) {
     return Geographic(
       lon: (json['longitude'] as num).toDouble(),
       lat: (json['latitude'] as num).toDouble(),
     );
+  }
+
+  double get totalDuration {
+    return legs.fold(0, (total, leg) => total + (leg.durationSeconds ?? 0));
   }
 
   List<JourneyLeg> get taxiLegs => legs.where((leg) => leg.isTaxi).toList();
@@ -54,7 +62,6 @@ class Journey {
         return leg;
       }
     }
-
     return null;
   }
 

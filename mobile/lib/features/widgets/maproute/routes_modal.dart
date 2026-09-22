@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gibela_sa/core/models/journey.dart';
 import 'package:gibela_sa/core/theme/app_colors.dart';
 import 'package:gibela_sa/features/widgets/maproute/route_card.dart';
+import 'package:intl/intl.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 class RouteOption {
@@ -90,10 +91,6 @@ class RoutesModal extends StatelessWidget {
             color: const Color(0xFFF95B2C),
           ),
         );
-
-        // If another taxi immediately follows,
-        // the passenger changes taxi at the
-        // current route's destination rank.
         if (i + 1 < journey.legs.length && journey.legs[i + 1].isTaxi) {
           final rankName = leg.route?.destinationRank.name ?? 'Taxi Rank';
 
@@ -111,8 +108,7 @@ class RoutesModal extends StatelessWidget {
         ),
       );
     }
-
-    final walkingMinutes = (journey.totalWalkingDuration / 60).ceil();
+    final totalMinutes = (journey.totalDuration / 60).ceil();
 
     String routeName;
 
@@ -125,24 +121,29 @@ class RoutesModal extends StatelessWidget {
     }
 
     return RouteOption(
-      // Taxi duration isn't available yet,
-      // so make it clear this is walking time.
-      duration: '${_formatDuration(walkingMinutes)} walking',
-
-      departureTime: '--:--',
-
-      arrivalTime: '--:--',
-
+      duration: _formatDuration(totalMinutes),
+      departureTime: _formatTime(0),
+      arrivalTime: _formatTime(totalMinutes),
       fare: journey.totalFare > 0
           ? 'R ${_formatFare(journey.totalFare)}'
           : 'Fare unavailable',
-
       routeName: routeName,
-
       legs: transitLegs,
-
       hasTransfer: journey.hasTransfer,
     );
+  }
+
+  String _formatTime(int minutesToAdd) {
+    DateFormat formatter = DateFormat('HH:mm');
+    DateTime now = DateTime.now();
+    DateTime nowPlusMin = now.add(Duration(minutes: minutesToAdd));
+    String departureTime = formatter.format(now);
+    String arrivalTime = formatter.format(nowPlusMin);
+    if (minutesToAdd == 0) {
+      return departureTime;
+    } else {
+      return arrivalTime;
+    }
   }
 
   String _formatDuration(int totalMinutes) {
@@ -172,7 +173,7 @@ class RoutesModal extends StatelessWidget {
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
       initialChildSize: 0.42,
-      minChildSize: 0.05,
+      minChildSize: 0.08,
       maxChildSize: 0.90,
       builder: (context, scrollController) {
         return Container(

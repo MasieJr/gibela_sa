@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:gibela_sa/core/models/journey.dart';
 import 'package:gibela_sa/core/models/place.dart';
 import 'package:gibela_sa/core/network/api_client.dart';
+import 'package:gibela_sa/features/widgets/maproute/details_modal.dart';
 import 'package:gibela_sa/features/widgets/maproute/map_view.dart';
 import 'package:gibela_sa/features/widgets/maproute/route_header.dart';
 import 'package:gibela_sa/features/widgets/maproute/routes_modal.dart';
+
+enum JourneySheet { routes, details }
 
 class MapRoutePage extends StatefulWidget {
   final Place origin;
@@ -21,6 +24,7 @@ class MapRoutePage extends StatefulWidget {
 }
 
 class _MapRoutePageState extends State<MapRoutePage> {
+  JourneySheet _activeSheet = JourneySheet.routes;
   late final ApiClient _api;
   bool isLoading = true;
   List<Journey> journeys = [];
@@ -33,6 +37,19 @@ class _MapRoutePageState extends State<MapRoutePage> {
     _api = ApiClient();
 
     getRoutes();
+  }
+
+  void _selectJourney(Journey journey) {
+    setState(() {
+      selectedJourney = journey;
+      _activeSheet = JourneySheet.details;
+    });
+  }
+
+  void _showRoutes() {
+    setState(() {
+      _activeSheet = JourneySheet.routes;
+    });
   }
 
   Future<void> getRoutes() async {
@@ -76,11 +93,11 @@ class _MapRoutePageState extends State<MapRoutePage> {
     }
   }
 
-  void _selectJourney(Journey journey) {
-    setState(() {
-      selectedJourney = journey;
-    });
-  }
+  // void _selectJourney(Journey journey) {
+  //   setState(() {
+  //     selectedJourney = journey;
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -102,12 +119,21 @@ class _MapRoutePageState extends State<MapRoutePage> {
             ),
           ),
 
-          RoutesModal(
-            isLoading: isLoading,
-            journeys: journeys,
-            selectedJourney: selectedJourney,
-            onJourneySelected: _selectJourney,
-          ),
+          // RoutesModal(
+          //   isLoading: isLoading,
+          //   journeys: journeys,
+          //   selectedJourney: selectedJourney,
+          //   onJourneySelected: _selectJourney,
+          // ),
+          if (_activeSheet == JourneySheet.routes)
+            RoutesModal(
+              isLoading: isLoading,
+              journeys: journeys,
+              selectedJourney: selectedJourney,
+              onJourneySelected: _selectJourney,
+            )
+          else if (selectedJourney != null)
+            DetailsModal(journey: selectedJourney!, onBack: _showRoutes),
         ],
       ),
     );

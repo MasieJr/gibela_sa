@@ -25,7 +25,7 @@ export class JourneysService {
     const transferJourneys = await this.findOneTransferJourneys(dto);
 
     if (transferJourneys.length > 0) {
-      console.log('direct');
+      console.log('tranfer');
       return {
         journeys: transferJourneys,
       };
@@ -111,7 +111,7 @@ export class JourneysService {
           AND ST_DWithin(
             r.geometry::geography,
             input.destination_point::geography,
-            2500
+            1500
           )
       )
 
@@ -140,13 +140,21 @@ export class JourneysService {
           )
         )::json AS dropoff_point,
 
-        ST_AsGeoJSON(
-          ST_LineSubstring(
-            geometry,
-            board_position,
-            dropoff_position
-          )
-        )::json AS journey_geometry
+       ST_AsGeoJSON(
+        ST_LineSubstring(
+          geometry,
+          board_position,
+          dropoff_position
+        )
+      )::json AS journey_geometry,
+
+      ST_Length(
+        ST_LineSubstring(
+          geometry,
+          board_position,
+          dropoff_position
+        )::geography
+      ) AS taxi_distance_meters
 
       FROM candidates
       WHERE board_position < dropoff_position
@@ -165,6 +173,11 @@ export class JourneysService {
         const [boardingLng, boardingLat] = route.boarding_point.coordinates;
 
         const [dropOffLng, dropOffLat] = route.dropoff_point.coordinates;
+
+        const taxiDistanceMeters = Number(route.taxi_distance_meters);
+
+        const taxiDurationSeconds =
+          this.estimateTaxiDuration(taxiDistanceMeters);
 
         const [walkingToTaxi, walkingToDestination] = await Promise.all([
           this.walkingService.getWalkingRoute(
@@ -213,29 +226,24 @@ export class JourneysService {
 
             {
               type: 'taxi',
-
+              distanceMeters: taxiDistanceMeters,
+              durationSeconds: taxiDurationSeconds,
               geometry: route.journey_geometry,
-
               route: {
                 id: route.id,
                 name: route.name,
-
                 originRank: {
                   id: route.origin_rank_id,
                   name: route.origin_rank_name,
                 },
-
                 destinationRank: {
                   id: route.destination_rank_id,
                   name: route.destination_rank_name,
                 },
-
                 fare: route.fare !== null ? Number(route.fare) : null,
-
                 verified: route.verified,
               },
             },
-
             {
               type: 'walk',
               ...walkingToDestination,
@@ -249,14 +257,11 @@ export class JourneysService {
       const aWalkingDistance = a.legs
         .filter((leg) => leg.type === 'walk')
         .reduce((total, leg) => total + (leg.distanceMeters ?? 0), 0);
-
       const bWalkingDistance = b.legs
         .filter((leg) => leg.type === 'walk')
         .reduce((total, leg) => total + (leg.distanceMeters ?? 0), 0);
-
       return aWalkingDistance - bWalkingDistance;
     });
-
     return journeys;
   }
 
@@ -385,7 +390,7 @@ export class JourneysService {
         AND ST_DWithin(
           second_route.geometry::geography,
           input.destination_point::geography,
-          2500
+          1500
         )
 
         -- Don't connect a route to itself
@@ -394,7 +399,6 @@ export class JourneysService {
 
     SELECT
       *,
-
       -- Boarding point on Route A
       ST_AsGeoJSON(
         ST_LineInterpolatePoint(
@@ -413,6 +417,14 @@ export class JourneysService {
         )
       )::json AS first_journey_geometry,
 
+      ST_Length(
+        ST_LineSubstring(
+          first_geometry,
+          board_position,
+          1.0
+        )::geography
+      ) AS first_taxi_distance_meters,
+
       -- Route B:
       -- transfer rank -> destination drop-off
       ST_AsGeoJSON(
@@ -422,6 +434,14 @@ export class JourneysService {
           dropoff_position
         )
       )::json AS second_journey_geometry,
+
+      ST_Length(
+        ST_LineSubstring(
+          second_geometry,
+          0.0,
+          dropoff_position
+        )::geography
+      ) AS second_taxi_distance_meters,
 
       -- Drop-off point on Route B
       ST_AsGeoJSON(
@@ -457,8 +477,22 @@ export class JourneysService {
     const journeys = await Promise.all(
       result.rows.map(async (route) => {
         const [boardingLng, boardingLat] = route.boarding_point.coordinates;
-
         const [dropOffLng, dropOffLat] = route.dropoff_point.coordinates;
+        const firstTaxiDistanceMeters = Number(
+          route.first_taxi_distance_meters,
+        );
+
+        const secondTaxiDistanceMeters = Number(
+          route.second_taxi_distance_meters,
+        );
+
+        const firstTaxiDurationSeconds = this.estimateTaxiDuration(
+          firstTaxiDistanceMeters,
+        );
+
+        const secondTaxiDurationSeconds = this.estimateTaxiDuration(
+          secondTaxiDistanceMeters,
+        );
 
         const [walkingToTaxi, walkingToDestination] = await Promise.all([
           this.walkingService.getWalkingRoute(
@@ -507,56 +541,46 @@ export class JourneysService {
 
             {
               type: 'taxi',
-
+              distanceMeters: firstTaxiDistanceMeters,
+              durationSeconds: firstTaxiDurationSeconds,
               geometry: route.first_journey_geometry,
-
               route: {
                 id: route.first_route_id,
                 name: route.first_route_name,
-
                 originRank: {
                   id: route.first_origin_rank_id,
                   name: route.first_origin_rank_name,
                 },
-
                 destinationRank: {
                   id: route.first_destination_rank_id,
                   name: route.transfer_rank_name,
                 },
-
                 fare:
                   route.first_fare !== null ? Number(route.first_fare) : null,
-
                 verified: route.first_verified,
               },
             },
-
             {
               type: 'taxi',
-
+              distanceMeters: secondTaxiDistanceMeters,
+              durationSeconds: secondTaxiDurationSeconds,
               geometry: route.second_journey_geometry,
-
               route: {
                 id: route.second_route_id,
                 name: route.second_route_name,
-
                 originRank: {
                   id: route.second_origin_rank_id,
                   name: route.transfer_rank_name,
                 },
-
                 destinationRank: {
                   id: route.second_destination_rank_id,
                   name: route.second_destination_rank_name,
                 },
-
                 fare:
                   route.second_fare !== null ? Number(route.second_fare) : null,
-
                 verified: route.second_verified,
               },
             },
-
             {
               type: 'walk',
               ...walkingToDestination,
@@ -578,5 +602,13 @@ export class JourneysService {
     });
 
     return journeys;
+  }
+
+  private estimateTaxiDuration(distanceMeters: number): number {
+    // Temporary MVP estimate.
+    // Replace later with traffic-aware travel times.
+    const averageSpeedKmH = 30;
+    const metersPerSecond = (averageSpeedKmH * 1000) / 3600;
+    return Math.round(distanceMeters / metersPerSecond);
   }
 }

@@ -17,9 +17,10 @@ class _MapViewState extends State<MapView> {
   MapController? _mapController;
   bool _styleLoaded = false;
 
-  /// Keep track of how many journey legs are currently
-  /// drawn on the map.
   int _drawnLegCount = 0;
+
+  final List<String> _markerSourceIds = [];
+  final List<String> _markerLayerIds = [];
 
   @override
   void didUpdateWidget(covariant MapView oldWidget) {
@@ -44,11 +45,44 @@ class _MapViewState extends State<MapView> {
       return;
     }
 
-    /*
-     * Remove the OLD journey first.
-     *
-     * Layers must be removed before their sources.
-     */
+    await _clearJourney(style);
+
+    await _drawJourneyLines(style, journey);
+
+    await _drawJourneyMarkers(style, journey);
+
+    _drawnLegCount = journey.legs.length;
+
+    await _fitJourney();
+  }
+
+  // =========================================================
+  // CLEAR OLD JOURNEY
+  // =========================================================
+
+  Future<void> _clearJourney(dynamic style) async {
+    // Remove marker layers first.
+    for (final layerId in _markerLayerIds) {
+      try {
+        await style.removeLayer(layerId);
+      } catch (e) {
+        debugPrint('Could not remove marker layer $layerId: $e');
+      }
+    }
+
+    // Then marker sources.
+    for (final sourceId in _markerSourceIds) {
+      try {
+        await style.removeSource(sourceId);
+      } catch (e) {
+        debugPrint('Could not remove marker source $sourceId: $e');
+      }
+    }
+
+    _markerLayerIds.clear();
+    _markerSourceIds.clear();
+
+    // Remove journey lines.
     for (int i = 0; i < _drawnLegCount; i++) {
       final sourceId = 'journey-source-$i';
       final layerId = 'journey-layer-$i';
@@ -66,9 +100,14 @@ class _MapViewState extends State<MapView> {
       }
     }
 
-    /*
-     * Draw the newly selected journey.
-     */
+    _drawnLegCount = 0;
+  }
+
+  // =========================================================
+  // DRAW ROUTE LINES
+  // =========================================================
+
+  Future<void> _drawJourneyLines(dynamic style, Journey journey) async {
     for (int i = 0; i < journey.legs.length; i++) {
       final leg = journey.legs[i];
 
@@ -99,28 +138,127 @@ class _MapViewState extends State<MapView> {
           layout: const {'line-cap': 'round', 'line-join': 'round'},
           paint: {
             'line-color': leg.isWalking ? '#64748B' : '#F95B2C',
-
             'line-width': leg.isWalking ? 4.0 : 6.0,
-
             'line-opacity': 0.9,
-
             if (leg.isWalking) 'line-dasharray': [2.0, 2.0],
           },
         ),
       );
     }
-
-    /*
-     * Remember how many layers/sources we just added
-     * so they can be removed on the next selection.
-     */
-    _drawnLegCount = journey.legs.length;
-
-    /*
-     * Move camera to the newly selected journey.
-     */
-    await _fitJourney();
   }
+
+  // =========================================================
+  // DRAW MARKERS
+  // =========================================================
+
+  Future<void> _drawJourneyMarkers(dynamic style, Journey journey) async {
+    debugPrint('DRAWING JOURNEY MARKERS');
+
+    // START
+    await _addMarker(
+      style: style,
+      id: 'start',
+      point: journey.origin,
+      color: '#16A34A',
+      radius: 9,
+    );
+
+    // BOARD TAXI
+    await _addMarker(
+      style: style,
+      id: 'boarding',
+      point: journey.boardingPoint,
+      color: '#F95B2C',
+      radius: 7,
+    );
+
+    // TRANSFER
+    final transferPoint = journey.transferPoint;
+
+    if (transferPoint != null) {
+      debugPrint(
+        'Transfer marker: '
+        '${transferPoint.lat}, ${transferPoint.lon}',
+      );
+
+      await _addMarker(
+        style: style,
+        id: 'transfer',
+        point: transferPoint,
+        color: '#2563EB',
+        radius: 10,
+      );
+    }
+
+    // DROP OFF
+    await _addMarker(
+      style: style,
+      id: 'dropoff',
+      point: journey.dropOffPoint,
+      color: '#F95B2C',
+      radius: 7,
+    );
+
+    // DESTINATION
+    await _addMarker(
+      style: style,
+      id: 'destination',
+      point: journey.destination,
+      color: '#DC2626',
+      radius: 9,
+    );
+  }
+
+  Future<void> _addMarker({
+    required dynamic style,
+    required String id,
+    required Geographic point,
+    required String color,
+    required double radius,
+  }) async {
+    final sourceId = 'journey-marker-$id-source';
+    final layerId = 'journey-marker-$id-layer';
+
+    final geoJson = {
+      'type': 'Feature',
+      'properties': {'type': id},
+      'geometry': {
+        'type': 'Point',
+        'coordinates': [point.lon, point.lat],
+      },
+    };
+
+    debugPrint(
+      'Adding $id marker at '
+      '${point.lat}, ${point.lon}',
+    );
+
+    await style.addSource(
+      GeoJsonSource(id: sourceId, data: jsonEncode(geoJson)),
+    );
+
+    _markerSourceIds.add(sourceId);
+
+    await style.addLayer(
+      CircleStyleLayer(
+        id: layerId,
+        sourceId: sourceId,
+        paint: {
+          'circle-radius': radius,
+          'circle-color': color,
+          'circle-stroke-color': '#FFFFFF',
+          'circle-stroke-width': 3.0,
+          'circle-opacity': 1.0,
+        },
+      ),
+    );
+
+    _markerLayerIds.add(layerId);
+  }
+
+  // =========================================================
+  // CAMERA
+  // =========================================================
 
   Future<void> _fitJourney() async {
     final controller = _mapController;
@@ -130,9 +268,11 @@ class _MapViewState extends State<MapView> {
       return;
     }
 
-    final points = journey.legs
-        .expand((leg) => leg.geometry.flattened)
-        .toList();
+    final points = <Geographic>[
+      journey.origin,
+      ...journey.legs.expand((leg) => leg.geometry.flattened),
+      journey.destination,
+    ];
 
     if (points.isEmpty) {
       return;
@@ -168,9 +308,13 @@ class _MapViewState extends State<MapView> {
         latitudeSouth: minLat,
         latitudeNorth: maxLat,
       ),
-      padding: const EdgeInsets.fromLTRB(40, 120, 40, 320),
+      padding: const EdgeInsets.fromLTRB(50, 130, 50, 340),
     );
   }
+
+  // =========================================================
+  // BUILD
+  // =========================================================
 
   @override
   Widget build(BuildContext context) {

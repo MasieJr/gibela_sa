@@ -16,6 +16,10 @@ class RouteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final transferLegs = route.legs.where((leg) => leg.isTransfer).toList();
+
+    final normalLegs = route.legs.where((leg) => !leg.isTransfer).toList();
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -31,7 +35,7 @@ class RouteCard extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(12),
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -81,10 +85,10 @@ class RouteCard extends StatelessWidget {
                   spacing: 6,
                   runSpacing: 6,
                   children: [
-                    for (int i = 0; i < route.legs.length; i++) ...[
-                      _buildLegBadge(route.legs[i]),
+                    for (int i = 0; i < normalLegs.length; i++) ...[
+                      _buildLegBadge(normalLegs[i]),
 
-                      if (i < route.legs.length - 1)
+                      if (i < normalLegs.length - 1)
                         const Icon(
                           Icons.chevron_right,
                           color: Colors.white38,
@@ -93,6 +97,16 @@ class RouteCard extends StatelessWidget {
                     ],
                   ],
                 ),
+
+                if (transferLegs.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+
+                  for (final transfer in transferLegs)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: _buildTransferRow(transfer),
+                    ),
+                ],
 
                 const SizedBox(height: 10),
 
@@ -126,7 +140,7 @@ class RouteCard extends StatelessWidget {
 
   Widget _buildLegBadge(TransitLeg leg) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
         color: leg.color,
         borderRadius: BorderRadius.circular(4),
@@ -148,6 +162,38 @@ class RouteCard extends StatelessWidget {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTransferRow(TransitLeg leg) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.swap_horiz_rounded,
+            size: 18,
+            color: Color(0xFFF95B2C),
+          ),
+
+          const SizedBox(width: 8),
+
+          Expanded(
+            child: Text(
+              leg.label ?? 'Transfer',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
         ],
       ),
     );

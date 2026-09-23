@@ -72,7 +72,6 @@ class ApiClient {
           .map((json) => Journey.fromJson(json as Map<String, dynamic>))
           .toList();
     } on DioException catch (e) {
-      print('Search error: ${e.message}');
       rethrow;
     }
   }

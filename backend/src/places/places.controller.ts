@@ -11,4 +11,7 @@ export class PlacesController {
   search(@Query() query: SearchPlaceDto) {
     return this.placesService.search(query.q);
   }
+
+  @Get('current')
+  current(@Query()query: Get)
 }

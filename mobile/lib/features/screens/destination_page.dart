@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:gibela_sa/core/config/location.dart';
 import 'package:gibela_sa/core/models/place.dart';
+import 'package:gibela_sa/core/network/api_client.dart';
 import 'package:gibela_sa/core/theme/app_colors.dart';
 import 'package:gibela_sa/features/widgets/destination/bottom_action_bar.dart';
 import 'package:gibela_sa/features/widgets/destination/input_header.dart';
@@ -16,6 +18,7 @@ class DestinationPage extends StatefulWidget {
 class _DestinationPageState extends State<DestinationPage> {
   late final TextEditingController _originController;
   late final TextEditingController _destinationController;
+  late final ApiClient _api;
 
   Place? origin;
   Place? destination;
@@ -60,7 +63,6 @@ class _DestinationPageState extends State<DestinationPage> {
       final tempText = _originController.text;
       _originController.text = _destinationController.text;
       _destinationController.text = tempText;
-
       final tempLocation = origin;
       origin = destination;
       destination = tempLocation;
@@ -70,8 +72,36 @@ class _DestinationPageState extends State<DestinationPage> {
   @override
   void initState() {
     super.initState();
+    _loadCurrentLocation();
     _originController = TextEditingController();
     _destinationController = TextEditingController();
+    _api = ApiClient();
+    _originController.text = "Current Location";
+  }
+
+  Future<void> _loadCurrentLocation() async {
+    final position = await getCurrentLocation();
+    if (position == null) return;
+    final currentLocation = Place(
+      placeId: "Current Location",
+      name: 'Current location',
+      address: "Current Location",
+      category: "Current Location",
+      latitude: position.latitude,
+      longitude: position.longitude,
+    );
+    setState(() {
+      origin = currentLocation;
+      _originController.text == 'Current Location';
+    });
+    final detailedPlace = await _api.getCurrentLocation(
+      position.latitude,
+      position.longitude,
+    );
+    if (!mounted) return;
+    setState(() {
+      origin = detailedPlace;
+    });
   }
 
   @override
@@ -95,7 +125,6 @@ class _DestinationPageState extends State<DestinationPage> {
               onDestinationSelected: _setDestination,
               onSwap: _swapLocations,
             ),
-
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(
@@ -111,12 +140,11 @@ class _DestinationPageState extends State<DestinationPage> {
                     onTap: () {
                       setState(() {
                         _originController.text = 'Current Location';
+                        _loadCurrentLocation();
                       });
                     },
                   ),
-
                   const SizedBox(height: 10),
-
                   QuickActionItems(
                     icon: Icons.map_outlined,
                     iconColor: const Color(0xFF388E9F),
@@ -124,9 +152,7 @@ class _DestinationPageState extends State<DestinationPage> {
                     subtitle: 'Pin origin or destination visually',
                     onTap: () {},
                   ),
-
                   const SizedBox(height: 24),
-
                   const Text(
                     'Recent & Popular Destinations',
                     style: TextStyle(
@@ -135,9 +161,7 @@ class _DestinationPageState extends State<DestinationPage> {
                       color: Color(0xFF1E293B),
                     ),
                   ),
-
                   const SizedBox(height: 12),
-
                   ..._recentPlaces.map(
                     (place) => PopularDestination(
                       title: place['title']!,
@@ -153,7 +177,6 @@ class _DestinationPageState extends State<DestinationPage> {
                 ],
               ),
             ),
-
             BottomActionBar(origin: origin, destination: destination),
           ],
         ),

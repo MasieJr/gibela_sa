@@ -4,9 +4,9 @@ import { Type } from 'class-transformer';
 export class GetCurrentLocationDto {
   @Type(() => Number)
   @IsLatitude()
-  fromLat!: number;
+  lat!: number;
 
   @Type(() => Number)
   @IsLongitude()
-  fromLng!: number;
+  lng!: number;
 }

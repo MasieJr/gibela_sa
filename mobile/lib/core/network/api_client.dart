@@ -49,6 +49,7 @@ class ApiClient {
     }
   }
 
+  //Plan Trip
   Future<List<Journey>> planTrip(
     double originLat,
     double originLon,
@@ -72,6 +73,25 @@ class ApiClient {
           .map((json) => Journey.fromJson(json as Map<String, dynamic>))
           .toList();
     } on DioException catch (e) {
+      print('Search error: ${e.message}');
+      rethrow;
+    }
+  }
+
+  //get current location address
+  Future<Place?> getCurrentLocation(double lat, double lng) async {
+    try {
+      final response = await dio.get(
+        '/places/current',
+        queryParameters: {'lat': lat, 'lng': lng},
+      );
+      final data = response.data;
+      if (data == null || data.isEmpty) {
+        return null;
+      }
+      return Place.fromJson(data.first as Map<String, dynamic>);
+    } on DioException catch (e) {
+      print('Search error: ${e.message}');
       rethrow;
     }
   }

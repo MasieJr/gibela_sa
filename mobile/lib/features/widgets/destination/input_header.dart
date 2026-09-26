@@ -75,7 +75,6 @@ class _InputHeaderState extends State<InputHeader> {
   @override
   void dispose() {
     _debounce?.cancel();
-
     super.dispose();
   }
 
